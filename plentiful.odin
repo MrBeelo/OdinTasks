@@ -6,22 +6,22 @@ import "core:slice"
 
 MAX_DIGITS :: 100
 neodigits := [?]int{0, -109, 22, 13, 4, 5, 86, -3013, 88, -1}
+example_digits := [?]int{2, 17, -1, -7964, 63749}
 
 main :: proc() {
-	is_plentiful(neodigits[:])
-	
-	example_digits := [?]int{2, 17, -1, -7964, 63749}
-	fmt.printfln("Examples:")
-	for digit in example_digits do fmt.printfln("%d -> %v", digit, normal_to_neo(digit, neodigits))
+	if is_plentiful(neodigits[:]) {
+		fmt.printfln("Examples:")
+		for digit in example_digits do fmt.printfln("%d -> %v", digit, normal_to_neo(digit, neodigits))
+	}
 }
 
+// General function for if a set is plentiful.
 is_plentiful :: proc(digits: []int) -> bool {
 	if len(digits) != 10 { fmt.printfln("Set is not plentiful, as it doesn't have exactly 10 digits.") 
 		return false 
 	}
 	
 	digit_array := slice_to_array(digits, 10)
-	
  	if !one_digit_per_lumn(digit_array) { 
   		fmt.printfln("Set is not plentiful, as there are duplicate or no digits on some lumns.")
     	return false 
@@ -37,20 +37,7 @@ is_plentiful :: proc(digits: []int) -> bool {
     return true
 }
 
-slice_to_array :: proc(slice: []int, $len: int) -> [len]int {
-	array: [len]int
-	for x, index in slice do array[index] = x
-	return array
-}
-
-pow :: proc(x: int, power: uint) -> int {
-	if x == 0 do return 1
-	if x == 1 do return x
-	result := x
-	for i in 1..<power do result *= x
-	return result
-}
-
+// Turns a neonumber to a normal number.
 neo_to_normal :: proc(digits: []int) -> int {
 	result: int
 	#reverse for digit, i in digits { 
@@ -61,18 +48,22 @@ neo_to_normal :: proc(digits: []int) -> int {
 	return result
 }
 
-get_last_digit_lumn :: proc(x: int) -> int { return x % 10 if x >= 0 else x % 10 + 10 }
+// Gets the column that belongs to any number. (0 -> 9)
+get_last_digit_lumn :: proc(x: int) -> int { return x % 10 + (10 if x < 0 else 0) }
 
+// Given a "last" digit (0 -> 9), returns it's corresponding neodigit lumn (e.g. 2 -> Z, 9 -> L)
 get_neodigit_from_last_digit :: proc(last_digit: int, available_digits: [10]int) -> int {
 	if !one_digit_per_lumn(available_digits) do return 0
 	for digit in available_digits do if last_digit == get_last_digit_lumn(digit) do return digit
 	return 0
 }
 
+// Gets the last neodigit of a normal number.
 get_last_neodigit_from_digit :: proc(x: int, available_digits: [10]int) -> int {
 	return get_neodigit_from_last_digit(get_last_digit_lumn(x), available_digits)
 }
 
+// Checks if there is exactly one digit per lumn.
 one_digit_per_lumn :: proc(digits: [10]int) -> bool {
 	result := make([]int, 10)
 	for digit, index in digits do result[index] = get_last_digit_lumn(digit)
@@ -81,6 +72,7 @@ one_digit_per_lumn :: proc(digits: [10]int) -> bool {
 	return false
 }
 
+// Turns a normal number into a neonumber.
 normal_to_neo :: proc(x: int, available_digits: [10]int) -> []int {
 	if !one_digit_per_lumn(available_digits) do return {}
 	
@@ -108,9 +100,26 @@ normal_to_neo :: proc(x: int, available_digits: [10]int) -> []int {
 	return result_slice
 }
 
+// Gets the biggest integer needed to be checked so that a set is plentiful. (|e| / 9)
 get_biggest_needed_number_check :: proc(available_digits: []int) -> int {
 	abs_available_digits := make([]int, len(available_digits))
 	for digit, index in available_digits do abs_available_digits[index] = math.abs(digit)
 	biggest_abs_digit := slice.max(abs_available_digits)
 	return int(math.floor(f32(biggest_abs_digit) / 9))
+}
+
+// HELPER FUNCTIONS
+
+slice_to_array :: proc(slice: []int, $len: int) -> [len]int {
+	array: [len]int
+	for x, index in slice do array[index] = x
+	return array
+}
+
+pow :: proc(x: int, power: uint) -> int {
+	if x == 0 do return 1
+	if x == 1 do return x
+	result := x
+	for i in 1..<power do result *= x
+	return result
 }
