@@ -1,17 +1,31 @@
+#+feature dynamic-literals
 package main
 
 import "core:math"
 import "core:fmt"
 import "core:slice"
+import "core:strings"
 
 MAX_DIGITS :: 100
-neodigits := [?]int{0, -109, 22, 13, 4, 5, 86, -3013, 88, -1}
 example_digits := [?]int{2, 17, -1, -7964, 63749}
+neodigits := map[int]string {
+	0 = "0",
+	-109 = "S",
+	22 = "ℤ",
+	13 = "B",
+	4 = "4",
+	5 = "5",
+	86 = "R",
+	-3013 = "𝅘𝅥𝅱♪",
+	88 = "C",
+	-1 = "L"
+}
 
 main :: proc() {
-	if is_plentiful(neodigits[:]) {
+	neo_keys, _ := slice.map_keys(neodigits)
+	if is_plentiful(neo_keys) {
 		fmt.printfln("Examples:")
-		for digit in example_digits do fmt.printfln("%d -> %v", digit, normal_to_neo(digit, neodigits))
+		for digit in example_digits do fmt.printfln("%d -> %v", digit, normal_to_neostring(digit, neodigits))
 	}
 }
 
@@ -28,7 +42,7 @@ is_plentiful :: proc(digits: []int) -> bool {
   	}
   
   	number_check := get_biggest_needed_number_check(digits)
-   	for i in -number_check..=number_check do if slice.equal(normal_to_neo(i, digit_array), []int{}) { 
+   	for i in -number_check..=number_check do if slice.equal(normal_to_neonumber(i, digit_array), []int{}) { 
     	fmt.printfln("Set is not plentiful, as the number %d cannot be made.", i)
      	return false 
     }
@@ -38,7 +52,7 @@ is_plentiful :: proc(digits: []int) -> bool {
 }
 
 // Turns a neonumber to a normal number.
-neo_to_normal :: proc(digits: []int) -> int {
+neonumber_to_normal :: proc(digits: []int) -> int {
 	result: int
 	#reverse for digit, i in digits { 
 		index := uint(len(digits) - 1 - uint(i))
@@ -51,7 +65,7 @@ neo_to_normal :: proc(digits: []int) -> int {
 // Gets the column that belongs to any number. (0 -> 9)
 get_last_digit_lumn :: proc(x: int) -> int { return x % 10 + (10 if x < 0 else 0) }
 
-// Given a "last" digit (0 -> 9), returns it's corresponding neodigit lumn (e.g. 2 -> Z, 9 -> L)
+// Given a "last" digit (0 -> 9), returns it's corresponding neodigit lumn. (e.g. 2 -> Z, 9 -> L)
 get_neodigit_from_last_digit :: proc(last_digit: int, available_digits: [10]int) -> int {
 	if !one_digit_per_lumn(available_digits) do return 0
 	for digit in available_digits do if last_digit == get_last_digit_lumn(digit) do return digit
@@ -73,7 +87,7 @@ one_digit_per_lumn :: proc(digits: [10]int) -> bool {
 }
 
 // Turns a normal number into a neonumber.
-normal_to_neo :: proc(x: int, available_digits: [10]int) -> []int {
+normal_to_neonumber :: proc(x: int, available_digits: [10]int) -> []int {
 	if !one_digit_per_lumn(available_digits) do return {}
 	
 	if x == 0 {
@@ -106,6 +120,21 @@ get_biggest_needed_number_check :: proc(available_digits: []int) -> int {
 	for digit, index in available_digits do abs_available_digits[index] = math.abs(digit)
 	biggest_abs_digit := slice.max(abs_available_digits)
 	return int(math.floor(f32(biggest_abs_digit) / 9))
+}
+
+// Gets a neonumber (array of neodigits) and returns a string with the number's string form.
+neonumber_to_neostring :: proc(number: []int, available_digits: map[int]string) -> string {
+	str: string
+	for digit in number do str = strings.concatenate({str, available_digits[digit]})
+	return str
+}
+
+// Ditto, but takes a normal number instead of a neonumber.
+normal_to_neostring :: proc(x: int, available_digits: map[int]string) -> string {
+	neo_keys, _ := slice.map_keys(neodigits)
+	if len(neo_keys) != 10 do return ""
+	neo_key_arr := slice_to_array(neo_keys, 10)
+	return neonumber_to_neostring(normal_to_neonumber(x, neo_key_arr), neodigits)
 }
 
 // HELPER FUNCTIONS
